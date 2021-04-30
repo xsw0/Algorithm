@@ -346,8 +346,7 @@ const struct AVLImpl *AVL_insert(AVL *avl, AVL_VALUE_TYPE value)
             }
             else
             {
-                // Prohibit same data insertion
-                assert(Compare(impl->value, value));
+                assert(Compare(impl->value, value));    // Prohibit same data insertion
                 if (impl->right)
                 {
                     impl = impl->right;
