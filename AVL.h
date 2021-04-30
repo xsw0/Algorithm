@@ -13,14 +13,7 @@ extern "C" {
 
 typedef int AVL_VALUE_TYPE;
 
-struct AVLImpl
-{
-    struct AVLImpl *parent;
-    struct AVLImpl *left;
-    struct AVLImpl *right;
-    int bf;
-    AVL_VALUE_TYPE value;
-};
+struct AVLImpl;
 
 typedef struct AVLImpl *AVL;
 
@@ -31,11 +24,16 @@ void AVL_Destruct(AVL *avl);
 
 bool AVL_empty(AVL *avl);
 
-struct AVLImpl *AVL_lower_bound(AVL *avl, AVL_VALUE_TYPE value);
-struct AVLImpl *AVL_upper_bound(AVL *avl, AVL_VALUE_TYPE value);
+const struct AVLImpl *AVL_lower_bound(AVL *avl, AVL_VALUE_TYPE value);
+const struct AVLImpl *AVL_upper_bound(AVL *avl, AVL_VALUE_TYPE value);
 
-void AVL_insert(AVL *avl, AVL_VALUE_TYPE value);
-void AVL_erase(AVL *avl, AVL_VALUE_TYPE value);
+const struct AVLImpl *AVL_insert(AVL *avl, AVL_VALUE_TYPE value);
+void AVL_erase(AVL *avl, struct AVLImpl *impl);
+
+AVL_VALUE_TYPE AVL_getValue(const struct AVLImpl *impl);
+
+const struct AVLImpl *AVL_left(const struct AVLImpl *impl);
+const struct AVLImpl *AVL_right(const struct AVLImpl *impl);
 
 #endif //ALGORITHM__AVL_H_
 

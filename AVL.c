@@ -9,6 +9,15 @@
 #include <assert.h>
 #include <stdbool.h>
 
+struct AVLImpl
+{
+    struct AVLImpl *parent;
+    struct AVLImpl *left;
+    struct AVLImpl *right;
+    int bf;
+    AVL_VALUE_TYPE value;
+};
+
 bool Compare(AVL_VALUE_TYPE lhs, AVL_VALUE_TYPE rhs)
 {
     return lhs < rhs;
@@ -20,7 +29,24 @@ bool AVL_empty(AVL *avl)
     return *avl == NULL;
 }
 
-struct AVLImpl *AVL_lower_bound(AVL *avl, AVL_VALUE_TYPE value)
+AVL_VALUE_TYPE AVL_getValue(const struct AVLImpl *impl)
+{
+    return impl->value;
+}
+
+const struct AVLImpl *AVL_left(const struct AVLImpl *impl)
+{
+    assert(impl);
+    return impl->left;
+}
+
+const struct AVLImpl *AVL_right(const struct AVLImpl *impl)
+{
+    assert(impl);
+    return impl->right;
+}
+
+const struct AVLImpl *AVL_lower_bound(AVL *avl, AVL_VALUE_TYPE value)
 {
     struct AVLImpl *impl = *avl;
     struct AVLImpl *result = NULL;
@@ -53,7 +79,7 @@ struct AVLImpl *AVL_lower_bound(AVL *avl, AVL_VALUE_TYPE value)
     return result;
 }
 
-struct AVLImpl *AVL_upper_bound(AVL *avl, AVL_VALUE_TYPE value)
+const struct AVLImpl *AVL_upper_bound(AVL *avl, AVL_VALUE_TYPE value)
 {
     struct AVLImpl *impl = *avl;
     struct AVLImpl *result = NULL;
@@ -86,127 +112,134 @@ struct AVLImpl *AVL_upper_bound(AVL *avl, AVL_VALUE_TYPE value)
     return result;
 }
 
-static void leftRotate(struct AVLImpl *impl)
+// return the new root
+static struct AVLImpl *leftRotate(struct AVLImpl *root)
 {
-    assert(impl);
-    assert(impl->right);
+    assert(root);
 
-    struct AVLImpl *l = impl->right;
-    struct AVLImpl *r = impl->right->right;
-    struct AVLImpl *ll = impl->left;
-    struct AVLImpl *lr = impl->right->left;
+    struct AVLImpl *pivot = root->right;
+    assert(pivot);
 
-    AVL_VALUE_TYPE t = l->value;
-    l->value = impl->value;
-    impl->value = t;
+    struct AVLImpl *mid = pivot->left;
 
-    impl->left = l;
-    impl->right = r;
+    if (root->parent)
+    {
+        struct AVLImpl *parent = root->parent;
+        if (root == root->parent->left)
+        {
+            parent->left = pivot;
+            if (abs(root->bf - 1) < abs(root->bf))
+            {
+                ++parent->bf;
+            }
+            else if (abs(root->bf - 1) > abs(root->bf))
+            {
+                --parent->bf;
+            }
+        }
+        else
+        {
+            assert(root == root->parent->right);
+            parent->right = pivot;
+            if (abs(root->bf - 1) < abs(root->bf))
+            {
+                --parent->bf;
+            }
+            else if (abs(root->bf - 1) > abs(root->bf))
+            {
+                ++parent->bf;
+            }
+        }
+        pivot->parent = parent;
+    }
 
-    l->parent = impl;
-    l->left = ll;
-    l->right = lr;
+    pivot->left = root;
+    root->parent = pivot;
 
-    if (ll) ll->parent = l;
-    if (lr) lr->parent = l;
+    root->right = mid;
+    if (mid) mid->parent = root;
 
-    int pivotBf = l->bf;
-    int rootBf = impl->bf;
+    --root->bf;
+    if (pivot->bf > 0) root->bf -= pivot->bf;
 
-    l->bf = rootBf - 1;
-    if (pivotBf > 0) l->bf -= pivotBf;
+    --pivot->bf;
+    if (root->bf < 0) pivot->bf += root->bf;
 
-    impl->bf = pivotBf - 1;
-    if (l->bf < 0) impl->bf += l->bf;
+    return pivot;
 }
 
-static void rightRotate(struct AVLImpl *impl)
+// return the new root
+static struct AVLImpl *rightRotate(struct AVLImpl *root)
 {
-    assert(impl);
-    assert(impl->left);
+    assert(root);
 
-    struct AVLImpl *l = impl->left->left;
-    struct AVLImpl *r = impl->left;
-    struct AVLImpl *rl = impl->left->right;
-    struct AVLImpl *rr = impl->right;
+    struct AVLImpl *pivot = root->right;
+    assert(pivot);
 
-    AVL_VALUE_TYPE t = r->value;
-    r->value = impl->value;
-    impl->value = t;
+    struct AVLImpl *mid = pivot->left;
 
-    impl->left = l;
-    impl->right = r;
+    if (root->parent)
+    {
+        struct AVLImpl *parent = root->parent;
+        if (root == root->parent->left)
+        {
+            parent->left = pivot;
+            if (abs(root->bf + 1) < abs(root->bf))
+            {
+                ++parent->bf;
+            }
+            else if (abs(root->bf + 1) > abs(root->bf))
+            {
+                --parent->bf;
+            }
+        }
+        else
+        {
+            assert(root == root->parent->right);
+            parent->right = pivot;
+            if (abs(root->bf + 1) < abs(root->bf))
+            {
+                --parent->bf;
+            }
+            else if (abs(root->bf + 1) > abs(root->bf))
+            {
+                ++parent->bf;
+            }
+        }
+        pivot->parent = parent;
+    }
 
-    r->parent = impl;
-    r->left = rl;
-    r->right = rr;
+    pivot->right = root;
+    root->parent = pivot;
 
-    if (rl) rl->parent = r;
-    if (rr) rr->parent = r;
+    root->left = mid;
+    if (mid) mid->parent = root;
 
-    int pivotBf = r->bf;
-    int rootBf = impl->bf;
+    ++root->bf;
+    if (pivot->bf < 0) root->bf -= pivot->bf;
 
-    r->bf = rootBf + 1;
-    if (pivotBf < 0) r->bf -= pivotBf;
+    ++pivot->bf;
+    if (root->bf > 0) pivot->bf += root->bf;
 
-    impl->bf = pivotBf + 1;
-    if (r->bf > 0) impl->bf += r->bf;
+    return pivot;
 }
 
 static void rebalance(struct AVLImpl *impl)
 {
     assert(impl);
-
-    switch (impl->bf)
+    if (impl->bf > 1)
     {
-    case 0:
-    case -1:
-    case 1:
-        if (impl->parent != NULL)
-        {
-            if (impl == impl->parent->left)
-            {
-                impl->parent->bf -= 1;
-            }
-
-            if (impl == impl->parent->right)
-            {
-                impl->parent->bf += 1;
-            }
-
-            if (impl->parent->bf != 0)
-            {
-                rebalance(impl->parent);
-            }
-        }
-        break;
-    default:
-        if (impl->bf > 0)
-        {
-            if (impl->right && impl->right->bf < 0)
-            {
-                rightRotate(impl->right);
-                leftRotate(impl);
-            }
-            else
-            {
-                leftRotate(impl);
-            }
-        }
-        else if (impl->bf < 0)
-        {
-            if (impl->left && impl->left->bf > 0)
-            {
-                leftRotate(impl->left);
-                rightRotate(impl);
-            }
-            else
-            {
-                rightRotate(impl);
-            }
-        }
-        break;
+        assert(impl->right);
+        if (impl->right->bf < 0) rightRotate(impl->right);
+        leftRotate(impl);
+        if (impl->parent) rebalance(impl->parent);
+    }
+    else if (impl->bf < -1)
+    {
+        assert(impl->left);
+        if (impl->left->bf > 0) leftRotate(impl->left);
+        rightRotate(impl);
+        if (impl->parent) rebalance(impl->parent);
     }
 }
 
@@ -218,43 +251,70 @@ static void AVLImpl_Destruct(struct AVLImpl *impl)
     free(impl);
 }
 
-void AVL_erase(AVL *avl, AVL_VALUE_TYPE value)
+void AVL_erase(AVL *avl, struct AVLImpl *impl)
 {
-    assert(avl);
-    struct AVLImpl *impl = *avl;
-    while (impl)
+    assert(impl);
+    struct AVLImpl *parent = impl->parent;
+    struct AVLImpl **parent_child = NULL;
+    int _bf = 0;
+    if (parent)
     {
-        if (Compare(value, impl->value))
+        assert(parent->left == impl || parent->right == impl);
+        _bf = parent->left == impl ? -1 : 1;
+        parent_child = parent->left == impl ? &parent->left : &parent->right;
+    }
+
+    if (!impl->left && !impl->right)
+    {
+        if (parent)
         {
-            if (impl->left)
-            {
-                impl = impl->left;
-            }
-            else
-            {
-                assert(0);
-            }
-        }
-        else if (Compare(impl->value, value))
-        {
-            if (impl->right)
-            {
-                impl = impl->right;
-            }
-            else
-            {
-                assert(0);
-            }
+            *parent_child = NULL;
+            parent->bf -= _bf * 1;
+            rebalance(parent);
         }
         else
         {
-            rebalance(impl);
-            AVLImpl_Destruct(impl);
+            *avl = NULL;
+        }
+        AVLImpl_Destruct(impl);
+    }
+    else if (!(impl->left && impl->right))
+    {
+        struct AVLImpl *pivot = impl->left ? impl->left : impl->right;
+        if (parent)
+        {
+            *parent_child = pivot;
+            pivot->parent = parent;
+            parent->bf -= _bf * 1;
+            rebalance(parent);
+        }
+        else
+        {
+            *avl = pivot;
+            pivot->parent = NULL;
+        }
+        AVLImpl_Destruct(impl);
+    }
+    else
+    {
+        if (impl->bf < 0)
+        {
+            struct AVLImpl *predecessor = impl->left;
+            while (predecessor->right) predecessor = predecessor->right;
+            impl->value = predecessor->value;
+            AVL_erase(avl, predecessor);
+        }
+        else
+        {
+            struct AVLImpl *successor = impl->right;
+            while (successor->left) successor = successor->left;
+            impl->value = successor->value;
+            AVL_erase(avl, successor);
         }
     }
 }
 
-void AVL_insert(AVL *avl, AVL_VALUE_TYPE value)
+const struct AVLImpl *AVL_insert(AVL *avl, AVL_VALUE_TYPE value)
 {
     assert(avl);
     struct AVLImpl *impl = *avl;
@@ -279,11 +339,15 @@ void AVL_insert(AVL *avl, AVL_VALUE_TYPE value)
                 {
                     impl->left = node;
                     node->parent = impl;
+                    --impl->bf;
+                    rebalance(impl);
                     break;
                 }
             }
-            else if (Compare(impl->value, value))
+            else
             {
+                // Prohibit same data insertion
+                assert(Compare(impl->value, value));
                 if (impl->right)
                 {
                     impl = impl->right;
@@ -292,14 +356,10 @@ void AVL_insert(AVL *avl, AVL_VALUE_TYPE value)
                 {
                     impl->right = node;
                     node->parent = impl;
+                    ++impl->bf;
+                    rebalance(impl);
                     break;
                 }
-            }
-            else
-            {
-                // for rand test
-//                assert(0);
-                return;
             }
         }
     }
@@ -308,8 +368,7 @@ void AVL_insert(AVL *avl, AVL_VALUE_TYPE value)
         node->parent = NULL;
         *avl = node;
     }
-
-    rebalance(node);
+    return node;
 }
 
 AVL *AVL_Construct()

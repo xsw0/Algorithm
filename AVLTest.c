@@ -9,50 +9,54 @@
 
 #include "AVL.h"
 
-void PreOrderTraverse(struct AVLImpl *avl, void(*function)(struct AVLImpl *))
+void PreOrderTraverse(const struct AVLImpl *avl, void(*function)(const struct AVLImpl *))
 {
     if (avl)
     {
         function(avl);
-        PreOrderTraverse(avl->left, function);
-        PreOrderTraverse(avl->right, function);
+        PreOrderTraverse(AVL_left(avl), function);
+        PreOrderTraverse(AVL_right(avl), function);
     }
 }
 
-void InOrderTraverse(struct AVLImpl *avl, void(*function)(struct AVLImpl *))
+void InOrderTraverse(const struct AVLImpl *avl, void(*function)(const struct AVLImpl *))
 {
     if (avl)
     {
-        InOrderTraverse(avl->left, function);
+        InOrderTraverse(AVL_left(avl), function);
         function(avl);
-        InOrderTraverse(avl->right, function);
+        InOrderTraverse(AVL_right(avl), function);
     }
 }
 
-void PostOrderTraverse(struct AVLImpl *avl, void(*function)(struct AVLImpl *))
+void PostOrderTraverse(const struct AVLImpl *avl, void(*function)(const struct AVLImpl *))
 {
     if (avl)
     {
-        PostOrderTraverse(avl->left, function);
-        PostOrderTraverse(avl->right, function);
+        PostOrderTraverse(AVL_left(avl), function);
+        PostOrderTraverse(AVL_right(avl), function);
         function(avl);
     }
 }
 
-void printNode(struct AVLImpl *avl)
+void printNode(const struct AVLImpl *avl)
 {
-    printf("%d ", avl->value);
+    printf("%d ", AVL_getValue(avl));
 }
 
-int AVLTest()
+void insert(AVL *avl, AVL_VALUE_TYPE arr[], size_t arrSize)
+{
+    for (int i = 0; i < arrSize; ++i)
+    {
+        AVL_insert(avl, arr[i]);
+    }
+}
+
+int AVLTest(int arr[], unsigned long long arrSize)
 {
     AVL *avl = AVL_Construct();
 
-    for (int i = 0; i < 50; ++i)
-    {
-        int n = abs(rand()) % 100;
-        AVL_insert(avl, n);
-    }
+    insert(avl, arr, arrSize);
 
 //    PreOrderTraverse(*avl, printNode);
 //    printf("\n");
@@ -64,12 +68,27 @@ int AVLTest()
     int n;
     while (scanf("%d", &n) != EOF)
     {
-        struct AVLImpl *lower = AVL_lower_bound(avl, n);
-        struct AVLImpl *upper = AVL_upper_bound(avl, n);
-        if (lower) { printf("%d ", AVL_lower_bound(avl, n)->value); }
-        else { printf("NULL "); }
-        if (upper) { printf("%d ", AVL_upper_bound(avl, n)->value); }
-        else { printf("NULL "); }
+        const struct AVLImpl *lower = AVL_lower_bound(avl, n);
+        const struct AVLImpl *upper = AVL_upper_bound(avl, n);
+
+        if (lower)
+        {
+            printf("%d ", AVL_getValue(AVL_lower_bound(avl, n)));
+        }
+        else
+        {
+            printf("NULL ");
+        }
+
+        if (upper)
+        {
+            printf("%d ", AVL_getValue(AVL_upper_bound(avl, n)));
+        }
+        else
+        {
+            printf("NULL ");
+        }
+
         printf("\n");
     }
 
