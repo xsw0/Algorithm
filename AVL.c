@@ -18,40 +18,60 @@ struct AVLImpl
     AVL_VALUE_TYPE value;
 };
 
-struct tup isLegal2(struct AVLImpl *root)
+int AVL_getBf(const struct AVLImpl *impl)
+{
+    return impl->bf;
+}
+
+struct tup *isLegal2(struct AVLImpl *root)
 {
     assert(root);
-    struct tup t = { 1, root->value, root->value };
-    struct tup l = { 0 };
-    struct tup r = { 0 };
+    struct tup *t = malloc(sizeof(struct tup));
+    t->min = root->value;
+    t->max = root->value;
+    struct tup *l = NULL;
+    struct tup *r = NULL;
     int maxHeight = 0;
-    if (root->left)
+
+    if (root->left) l = isLegal2(root->left);
+    if (l == NULL)
     {
-        l = isLegal2(root->left);
-        if (l.height > maxHeight) maxHeight = l.height;
-        if (l.min < t.min) t.min = l.min;
-        if (l.max > t.max) t.max = l.max;
-        assert(l.max < root->value);
+        l = malloc(sizeof(struct tup));
+        l->height = 0;
+    }
+    else
+    {
+        if (l->height > maxHeight) maxHeight = l->height;
+        if (l->min < t->min) t->min = l->min;
+        if (l->max > t->max) t->max = l->max;
+        if (l->max >= root->value) return NULL;
     }
 
-    if (root->right)
+    if (root->right) r = isLegal2(root->right);
+    if (r == NULL)
     {
-        r = isLegal2(root->right);
-        if (r.height > maxHeight) maxHeight = r.height;
-        if (r.min < t.min) t.min = r.min;
-        if (r.max > t.max) t.max = r.max;
-        assert(r.min > root->value);
+        r = malloc(sizeof(struct tup));
+        r->height = 0;
     }
-    t.height = 1 + maxHeight;
-    assert(root->bf == r.height - l.height);
+    else
+    {
+        if (r->height > maxHeight) maxHeight = r->height;
+        if (r->min < t->min) t->min = r->min;
+        if (r->max > t->max) t->max = r->max;
+        if (r->min <= root->value) return NULL;
+    }
+
+    t->height = 1 + maxHeight;
+    if (root->bf != r->height - l->height) return NULL;
+    free(l);
+    free(r);
     return t;
 }
 
 bool isLegal(struct AVLImpl *root)
 {
     if (root == NULL) return true;
-    isLegal2(root);
-    return true;
+    return isLegal2(root);
 }
 
 static struct AVLImpl *AVLImpl_Construct(struct AVLImpl *parent, AVL_VALUE_TYPE value)
@@ -248,7 +268,7 @@ static void rightRotate(struct AVLImpl **p_root)
     *p_root = pivot;
 }
 
-static void AVL_rebalance(struct AVLImpl *impl, int LR, int change)
+static struct AVLImpl *AVL_rebalance(struct AVLImpl *impl, int LR, int change)
 {
     assert(change == -1 || change == 1);
     assert(impl->bf >= -1 && impl->bf <= 1);
@@ -274,15 +294,16 @@ static void AVL_rebalance(struct AVLImpl *impl, int LR, int change)
         struct AVLImpl *parent = impl->parent;
         assert(impl == parent->left || impl == parent->right);
         int lr = impl == parent->left ? -1 : 1;
-        if (bf == 0)
+        if (bf == 0 && change > 0)
         {
             AVL_rebalance(impl->parent, lr, 1);
         }
-        else if (bf + LR * change == 0 && change < 0)
+        else if (impl->bf == 0 && change < 0)
         {
             AVL_rebalance(impl->parent, lr, -1);
         }
     }
+    return impl->parent;
 }
 
 const struct AVLImpl *AVL_Insert(AVL *avl, AVL_VALUE_TYPE value)
@@ -354,6 +375,7 @@ void AVL_Erase(AVL *avl, const struct AVLImpl *impl)
         {
             *parent_child = NULL;
             AVL_rebalance(parent, LR, -1);
+            while ((*avl)->parent) *avl = (*avl)->parent;
         }
         else
         {
@@ -369,6 +391,7 @@ void AVL_Erase(AVL *avl, const struct AVLImpl *impl)
             *parent_child = pivot;
             pivot->parent = parent;
             AVL_rebalance(parent, LR, -1);
+            while ((*avl)->parent) *avl = (*avl)->parent;
         }
         else
         {

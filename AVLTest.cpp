@@ -9,6 +9,8 @@
 #include <random>
 #include <string>
 #include <vector>
+#include <queue>
+#include <iomanip>
 
 #include "AVL.h"
 
@@ -44,15 +46,49 @@ void PostOrderTraverse(const struct AVLImpl *avl, void(*function)(const struct A
     }
 }
 
+void print(const struct AVLImpl *avl, int space = 128, int wid = 4)
+{
+    std::queue<const struct AVLImpl *> q, w;
+    q.push(avl);
+    bool b = true;
+    while (b)
+    {
+        b = false;
+        while (!q.empty())
+        {
+            std::cout << std::string(space - wid / 2, ' ');
+            if (q.front())
+            {
+                w.push(AVL_left(q.front()));
+                w.push(AVL_right(q.front()));
+                b = b || AVL_left(q.front()) || AVL_right(q.front());
+                std::cout << std::to_string(AVL_getValue(q.front())) << std::setw(2) << AVL_getBf(q.front());
+            }
+            else
+            {
+                w.push(nullptr);
+                w.push(nullptr);
+                std::cout << std::string(wid, ' ');
+            }
+            std::cout << std::string(space - wid / 2, ' ');
+            q.pop();
+        }
+        std::cout << "\n";
+        space /= 2;
+        q = std::move(w);
+        w = std::queue<const struct AVLImpl *>{};
+    }
+}
+
 void printNode(const struct AVLImpl *avl)
 {
-    avl_log += std::to_string(AVL_getValue(avl));
-    avl_log += " ";
+    std::cout << std::to_string(AVL_getValue(avl));
+    std::cout << " ";
 }
 
 void printAVL(AVL *avl)
 {
-    avl_log += ":";
+    std::cout << ":";
     InOrderTraverse(*avl, printNode);
 }
 
@@ -61,7 +97,7 @@ int AVLTest()
     std::default_random_engine engine{ std::random_device{}() };
     std::uniform_int_distribution<int> random_int{
         1, //std::numeric_limits<int>::min(),
-        999 //std::numeric_limits<int>::max()
+        std::numeric_limits<int>::max()
     };
 
     std::set<int> standard;
@@ -84,9 +120,9 @@ int AVLTest()
 
     auto empty = [&]() -> bool {
         printAVL(avl);
-        avl_log += "\n";
+        std::cout << "\n";
 
-        avl_log += "empty();\n\n";
+        std::cout << "empty();\n\n";
 
         return standard.empty() == AVL_empty(avl);
     };
@@ -104,27 +140,27 @@ int AVLTest()
             }
 
             printAVL(avl);
-            avl_log += "\n";
+            std::cout << "\n";
 
-            avl_log += "lower(";
-            avl_log += std::to_string(n);
-            avl_log += ");\n\n";
+            std::cout << "lower(";
+            std::cout << std::to_string(n);
+            std::cout << ");\n\n";
 
             auto it = standard.lower_bound(n);
 
             auto impl = AVL_lower_bound(avl, n);
             if ((impl == nullptr) != (it == standard.end()))
             {
-                avl_log += std::to_string(it == standard.end());
-                avl_log += std::to_string(impl == nullptr);
-                avl_log += "\n";
+                std::cout << std::to_string(it == standard.end());
+                std::cout << std::to_string(impl == nullptr);
+                std::cout << "\n";
                 return false;
             }
             if (impl == nullptr || AVL_getValue(impl) == *it) return true;
-            avl_log += "ERROR:\n";
-            avl_log += "Expect:\t" + std::to_string(*it) + "\n";
-            avl_log += "Actual:\t" + std::to_string(AVL_getValue(impl)) + "\n";
-            avl_log += "\n";
+            std::cout << "ERROR:\n";
+            std::cout << "Expect:\t" + std::to_string(*it) + "\n";
+            std::cout << "Actual:\t" + std::to_string(AVL_getValue(impl)) + "\n";
+            std::cout << "\n";
 
             return false;
         }
@@ -144,27 +180,27 @@ int AVLTest()
             }
 
             printAVL(avl);
-            avl_log += "\n";
+            std::cout << "\n";
 
-            avl_log += "upper(";
-            avl_log += std::to_string(n);
-            avl_log += ");\n\n";
+            std::cout << "upper(";
+            std::cout << std::to_string(n);
+            std::cout << ");\n\n";
 
             auto it = standard.upper_bound(n);
 
             auto impl = AVL_upper_bound(avl, n);
             if ((impl == nullptr) != (it == standard.end()))
             {
-                avl_log += std::to_string(it == standard.end());
-                avl_log += std::to_string(impl == nullptr);
-                avl_log += "\n";
+                std::cout << std::to_string(it == standard.end());
+                std::cout << std::to_string(impl == nullptr);
+                std::cout << "\n";
                 return false;
             }
             if (impl == nullptr || AVL_getValue(impl) == *it) return true;
-            avl_log += "ERROR:\n";
-            avl_log += "Expect:\t" + std::to_string(*it) + "\n";
-            avl_log += "Actual:\t" + std::to_string(AVL_getValue(impl)) + "\n";
-            avl_log += "\n";
+            std::cout << "ERROR:\n";
+            std::cout << "Expect:\t" + std::to_string(*it) + "\n";
+            std::cout << "Actual:\t" + std::to_string(AVL_getValue(impl)) + "\n";
+            std::cout << "\n";
 
             return false;
         }
@@ -176,11 +212,11 @@ int AVLTest()
         if (standard.find(r) == standard.end())
         {
             printAVL(avl);
-            avl_log += "\n";
+            std::cout << "\n";
 
-            avl_log += "insert(";
-            avl_log += std::to_string(r);
-            avl_log += ");\n\n";
+            std::cout << "insert(";
+            std::cout << std::to_string(r);
+            std::cout << ");\n\n";
 
             standard.insert(r);
             AVL_Insert(avl, r);
@@ -200,11 +236,11 @@ int AVLTest()
 
         printAVL(avl);
 
-        avl_log += "\n";
+        std::cout << "\n";
 
-        avl_log += "erase(";
-        avl_log += std::to_string(r);
-        avl_log += ");\n\n";
+        std::cout << "erase(";
+        std::cout << std::to_string(r);
+        std::cout << ");\n\n";
 
         standard.erase(standard.find(r));
         auto impl = AVL_lower_bound(avl, r);
@@ -215,8 +251,8 @@ int AVLTest()
 
     std::vector<std::function<bool()>> actions{
         insert,
-//        insert,
-//        insert,
+        insert,
+        insert,
         erase,
         lower,
         upper,
@@ -228,20 +264,43 @@ int AVLTest()
         actions.size() - 1
     };
 
-
-
+//    insert(3);
+//    insert(1);
+//    insert(5);
+//    insert(2);
+//    insert(4);
+//    insert(6);
+//    insert(7);
+//    print(*avl);
+//    erase(4);
+//    print(*avl);
+//    insert(282);
+//    insert(410);
+//    insert(843);
+//    insert(895);
+//    insert(397);
+//    erase(397);
+//    insert(31);
+//    erase(31);
+//    insert(859);
+//    insert(334);
+//    insert(153);
+//    erase(326);
+//    erase(282);
+//    insert(554);
+//    isLegal(*avl);
 
 //     printAVL(avl);
     std::cout << avl_log << std::endl;
     std::cout << "----------------------" << std::endl;
 
     auto test = [&]() -> bool {
-        for (int i = 0; i < 1000; ++i)
+        for (int i = 0; i < 10000; ++i)
         {
             auto result = actions[random_action(engine)]();
             auto s = standard.size();
-            isLegal(*avl);
-            if (!result)
+//            print(*avl);
+            if (!isLegal(*avl) || !result)
             {
                 return false;
             }
@@ -253,15 +312,15 @@ int AVLTest()
     if (result)
     {
         printAVL(avl);
-        avl_log += "\n";
-        avl_log += "all test success";
+        std::cout << "\n";
+        std::cout << "all test success";
         std::cout << avl_log << std::endl;
     }
     else
     {
         printAVL(avl);
-        avl_log += "\n";
-        avl_log += "fail";
+        std::cout << "\n";
+        std::cout << "fail";
         std::cout << avl_log << std::endl;
     }
 

@@ -34,6 +34,7 @@ void AVL_Destruct(AVL *avl);
 bool AVL_empty(AVL *avl);
 
 AVL_VALUE_TYPE AVL_getValue(const struct AVLImpl *impl);
+int AVL_getBf(const struct AVLImpl *impl);
 
 const struct AVLImpl *AVL_left(const struct AVLImpl *impl);
 const struct AVLImpl *AVL_right(const struct AVLImpl *impl);
