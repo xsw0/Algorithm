@@ -26,7 +26,7 @@ struct tup
 
 bool isLegal(struct AVLImpl *root);
 
-bool AVL_COMPARE(AVL_VALUE_TYPE lhs, AVL_VALUE_TYPE rhs);
+extern bool (*AVL_COMPARE)(AVL_VALUE_TYPE lhs, AVL_VALUE_TYPE rhs);
 
 AVL *AVL_Construct();
 void AVL_Destruct(AVL *avl);

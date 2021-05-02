@@ -56,7 +56,7 @@ void print(const struct AVLImpl *avl, int space = 128, int wid = 4)
         b = false;
         while (!q.empty())
         {
-            std::cout << std::string(space - wid / 2, ' ');
+            if (space - wid / 2 > 0) std::cout << std::string(space - wid / 2, ' ');
             if (q.front())
             {
                 w.push(AVL_left(q.front()));
@@ -68,9 +68,9 @@ void print(const struct AVLImpl *avl, int space = 128, int wid = 4)
             {
                 w.push(nullptr);
                 w.push(nullptr);
-                std::cout << std::string(wid, ' ');
+                if (wid > 0) std::cout << std::string(wid, ' ');
             }
-            std::cout << std::string(space - wid / 2, ' ');
+            if (space - wid / 2 > 0) std::cout << std::string(space - wid / 2, ' ');
             q.pop();
         }
         std::cout << "\n";
@@ -96,11 +96,15 @@ int AVLTest()
 {
     std::default_random_engine engine{ std::random_device{}() };
     std::uniform_int_distribution<int> random_int{
-        1, //std::numeric_limits<int>::min(),
-        std::numeric_limits<int>::max()
+        10, //std::numeric_limits<int>::min(),
+        99//std::numeric_limits<int>::max()
     };
 
-    std::set<int> standard;
+    AVL_COMPARE = [](int lhs, int rhs) -> bool {
+        return lhs > rhs;
+    };
+
+    std::set<int, decltype(AVL_COMPARE)> standard(AVL_COMPARE);
     AVL *avl = AVL_Construct();
 
     auto random_element = [&]() -> std::set<int>::iterator {
@@ -119,7 +123,7 @@ int AVLTest()
     };
 
     auto empty = [&]() -> bool {
-        printAVL(avl);
+//        printAVL(avl);
         std::cout << "\n";
 
         std::cout << "empty();\n\n";
@@ -164,7 +168,7 @@ int AVLTest()
 
             return false;
         }
-        return true;
+        return empty();
     };
 
     auto upper = [&](int n = 0) -> bool {
@@ -204,7 +208,7 @@ int AVLTest()
 
             return false;
         }
-        return true;
+        return empty();
     };
 
     auto insert = [&](int r = 0) -> bool {
@@ -221,7 +225,7 @@ int AVLTest()
             standard.insert(r);
             AVL_Insert(avl, r);
         }
-        return true;
+        return empty();
     };
 
     auto erase = [&](int r = 0) -> bool {
@@ -298,8 +302,8 @@ int AVLTest()
         for (int i = 0; i < 10000; ++i)
         {
             auto result = actions[random_action(engine)]();
-            auto s = standard.size();
-//            print(*avl);
+            // auto s = standard.size();
+            print(*avl);
             if (!isLegal(*avl) || !result)
             {
                 return false;

@@ -18,6 +18,8 @@ struct AVLImpl
     AVL_VALUE_TYPE value;
 };
 
+bool (*AVL_COMPARE)(AVL_VALUE_TYPE lhs, AVL_VALUE_TYPE rhs);
+
 int AVL_getBf(const struct AVLImpl *impl)
 {
     return impl->bf;
@@ -42,9 +44,11 @@ struct tup *isLegal2(struct AVLImpl *root)
     else
     {
         if (l->height > maxHeight) maxHeight = l->height;
-        if (l->min < t->min) t->min = l->min;
-        if (l->max > t->max) t->max = l->max;
-        if (l->max >= root->value) return NULL;
+        if (!AVL_COMPARE(l->max, root->value))
+        {
+            return NULL;
+        }
+        t->min = l->min;
     }
 
     if (root->right) r = isLegal2(root->right);
@@ -56,13 +60,18 @@ struct tup *isLegal2(struct AVLImpl *root)
     else
     {
         if (r->height > maxHeight) maxHeight = r->height;
-        if (r->min < t->min) t->min = r->min;
-        if (r->max > t->max) t->max = r->max;
-        if (r->min <= root->value) return NULL;
+        if (!AVL_COMPARE(root->value, r->min))
+        {
+            return NULL;
+        }
+        t->max = r->max;
     }
 
     t->height = 1 + maxHeight;
-    if (root->bf != r->height - l->height) return NULL;
+    if (root->bf != r->height - l->height)
+    {
+        return NULL;
+    }
     free(l);
     free(r);
     return t;
@@ -92,11 +101,6 @@ static void AVLImpl_Destruct(struct AVLImpl *impl)
     if (impl->left) AVLImpl_Destruct(impl->left);
     if (impl->right) AVLImpl_Destruct(impl->right);
     free(impl);
-}
-
-bool AVL_COMPARE(AVL_VALUE_TYPE lhs, AVL_VALUE_TYPE rhs)
-{
-    return lhs < rhs;
 }
 
 bool AVL_empty(AVL *avl)
