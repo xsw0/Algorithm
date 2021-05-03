@@ -57,7 +57,7 @@ int sortTest()
     std::cout.tie(nullptr);
     std::ios::sync_with_stdio(false);
 
-    auto cases = GenerateTestCases(1000);
+    auto cases = GenerateTestCases(3000);
 
     auto cmp = [](int lhs, int rhs) -> bool {
         return lhs > rhs;
